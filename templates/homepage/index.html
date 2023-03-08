@@ -1,0 +1,1095 @@
+﻿{% extends "basic.html" %}
+{% load static %}
+
+
+{% block head %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'patient/checkdisease/dps.css' %}">
+
+{% endblock %}
+
+
+
+
+{% block body %}
+
+<style>
+  .mic {
+    height: 45vw;
+    border-radius: 100px;
+  }
+
+
+  @media only screen and (max-width: 500px) {
+    .mic {
+      height: 45vw;
+      border-radius: 100px;
+    }
+
+  }
+
+
+
+  .vamain {
+    /* background-color: #17122e; */
+    background-color: black;
+    height: 100vh;
+    border-radius: 20px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 0 20px;
+  }
+
+  .vamain-1 {
+    display: grid;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .vamain-1-1 {
+    display: grid;
+    place-items: center;
+  }
+
+  #output {
+    pointer-events: none;
+    position: absolute;
+    bottom: 5%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 6vmin;
+    width: 80%;
+    text-align: center;
+    color: white;
+    text-transform: uppercase;
+    text-shadow: 0 -1px #000, 1px -1px #000, 1px 0 #000, 1px 1px #000, 0 1px #000,
+      -1px 1px #000, -1px 0 #000, -1px -1px #000;
+  }
+
+
+
+
+
+
+  .listening-words {
+    color: grey;
+    font-size: 0.8em;
+    line-height: 1.4;
+  }
+
+  .circle {
+    top: 50%;
+    left: 50%;
+    display: inline-block;
+    width: 150px;
+    height: 150px;
+    /* background: green; */
+    background: #1b2088;
+    border-radius: 50%;
+    padding: 15px;
+  }
+
+  .recipe-selection {
+    display: inline-block;
+    margin-top: 4em;
+    width: 100px;
+    height: 100px;
+  }
+
+  .interface-wrapper {
+    margin-top: -140px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .speech-interface {
+    position: absolute;
+  }
+
+  .pulse:before,
+  .pulse:after {
+    content: "";
+    display: block;
+    position: absolute;
+    /* border: 2px solid green; */
+    border: 2px solid #1b2088;
+    left: -20px;
+    right: -20px;
+    top: -20px;
+    bottom: -20px;
+    border-radius: 50%;
+    animation: animate 1.5s linear infinite;
+    opacity: 0;
+  }
+
+  .pulse:after {
+    animation-delay: 0.5s;
+  }
+
+  @keyframes animate {
+    0% {
+      transform: scale(0.5);
+      opacity: 0;
+    }
+
+    50% {
+      opacity: 1;
+    }
+
+    100% {
+      transform: scale(1.3);
+      opacity: 0;
+    }
+  }
+
+  #overlay-backdrop {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 9999999999999999;
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+
+  #overlay-backdrop #overlay-text {
+    position: relative;
+    top: 140px;
+    margin: 0 auto !important;
+    max-width: 315px;
+    color: white;
+    font-size: larger;
+    line-height: 1.4em;
+  }
+
+  #overlay-backdrop #overlay-arrow {
+    margin-left: 45px;
+    width: 40px;
+    height: 80px;
+    background-size: contain;
+    transform: rotate(160deg);
+    background-repeat: no-repeat;
+  }
+
+  #overlay-backdrop #allow-text {
+    /* background-color: green; */
+    background-color: #1b2088;
+    padding: 1px 7px;
+    border-radius: 4px;
+  }
+
+  @media only screen and (max-width: 600px) {
+    #overlay-backdrop #overlay-text {
+      top: 50vh;
+    }
+
+    #overlay-backdrop #overlay-arrow {
+      margin-left: 70vw;
+      transform: rotate(190deg) scaleX(-1);
+    }
+  }
+
+  .deactivate {
+    display: none;
+  }
+</style>
+
+
+<div class="vamain" onclick="runSpeechRecognition()">
+
+  <div class="vamain-1">
+    <div class="vamain-1-1">
+      <div class="interface-wrapper">
+        <div class="speech-interface">
+          <div class="circle">
+            <svg class="miciconspeaking deactivate" preserveAspectRatio="xMidYMid" viewBox="0 0 24 24">
+              <line x1="5" y1="8.5" x2="5" y2="16.5" stroke-width="3.5" stroke="#ccc" stroke-linejoin="miter"
+                stroke-linecap="round" stroke-miterlimit="3">
+                <animateTransform id="1stbar" attributeName="transform" attributeType="XML" type="translate" dur="1s"
+                  values="0,2; 0,-2; 0,2" repeatCount="indefinite" />
+              </line>
+              <line x1="12" y1="5.5" x2="12" y2="17.5" stroke-width="3.5" stroke="#ccc" stroke-linejoin="miter"
+                stroke-linecap="round" stroke-miterlimit="3">
+                <animateTransform id="1stbar" attributeName="transform" attributeType="XML" type="translate" dur="1s"
+                  begin="0.3s" values="0,2; 0,-2; 0,2" repeatCount="indefinite" />
+              </line>
+              <line x1="19" y1="8.5" x2="19" y2="16.5" stroke-width="3.5" stroke="#ccc" stroke-linejoin="miter"
+                stroke-linecap="round" stroke-miterlimit="3">
+                <animateTransform id="1stbar" attributeName="transform" attributeType="XML" type="translate"
+                  begin="0.6s" dur="1s" values="0,2; 0,-2; 0,2" repeatCount="indefinite" />
+              </line>
+            </svg>
+            <svg class="miciconnotspeaking" preserveAspectRatio="xMidYMid" viewBox="0 0 24 24">
+              <path fill="#ccc"
+                d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <!-- <button type="button" >Click and speak</button> -->
+      <div id="output"></div>
+      <!-- <p>Only works on Chrome for now :-/</p> -->
+    </div>
+  </div>
+
+</div>
+
+
+
+
+
+
+<div class="container">
+  <div class="card-footer">
+    <button id="predict" class="btn btn-success">Predict</button>
+  </div>
+</div>
+
+<br>
+
+<div id="resultdiv" style="display: none;width: 100vw;">
+  <div class="text-center">
+    <div class="card" id="predicted-data">
+      <div>
+        <span class="diseasefield">Patient name : {{ user.patient.name }}</span>
+        <span class="diseasefield">&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp Age : {{ user.patient.age }} </span>
+      </div>
+      <span class="diseasefield">predicted disease is : </span><span class="diseasefield" id="diseasefield"
+        style="color: #092700; text-shadow: 2px 2px 4px rgb(36, 255, 45);"></span> <br>
+      <br>
+      <span class="diseasefield">confidence score of : </span>
+      <span>
+        <div class="progress" style="display: inline-block;width:140px">
+          <div id="percentage" class="progress-bar" style="width: 0%">0%
+          </div>
+        </div>
+      </span>
+
+    </div>
+  </div>
+
+  <div class="text-center mt-4 mb-4">
+    <button class="btn btn-outline-success">
+      <a id="href" href="https://www.google.com/search?q=anuj" target="_blank" rel="noopener noreferrer">Click here to
+        know more about &nbsp
+        <span id="diseasesearch" style="color: crimson;"></span></a>
+    </button>
+  </div>
+  <!-- <br><br> -->
+
+  <div class="mx-auto text-center " style="width:350px">
+
+
+    <div>
+      <form action="consult_a_doctor" method="GET">
+        {% csrf_token %}
+        <button id="consultbtn" type="submit" class="btn btn-primary"> Consult a <span id="consultdoctor"
+            name="consultdoctor"> </span> doctor</button>
+      </form>
+    </div>
+
+
+  </div>
+
+
+
+</div>
+
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+  let sympfromsympdata = "";
+
+  const sympdata = {
+    itching:
+      "Itchy skin is an irritating sensation that makes you want to scratch. It's also called pruritus (proo-RIE-tus). Itchy skin is often caused by dry skin and is common in older adults, as skin tends to become drier with age.  Depending on the cause of your itchiness, your skin may look no different than usual or it may be inflamed, rough or have bumps. Repeated scratching can cause raised thick areas of skin that might bleed or become infected.  Many people find relief with self-care measures such as moisturizers, gentle cleansers and lukewarm baths. Long-term relief requires identifying and treating the cause of itchy skin. Common treatments are medicated creams, moist dressings and anti-itch medicines taken by mouth.",
+    skin_rash:
+      "A rash is any area of irritated or swollen skin on your body. Rashes are often itchy and painful and can appear differently on different skin tones. While they are often described as red, on darker skin tones they may be purple, gray, or white.  noda_skin_eruption : A rash accompanied by swollen lymph nodes usually stems from a viral infection, such as measles, chickenpox, or mononucleosis.  A rash is an inflammatory response that causes changes to your skin, such as redness, itching, blistering, or scaly or raised skin patches. Rashes can be the result of a variety of things.  Lymph nodes are part of your lymphatic system. They filter fluids in your body and return them to your circulation system for disposal. They also house infection-fighting cells.  You can’t typically feel your lymph nodes when you’re healthy, but they can become swollen and tender when your body is having an immune response.",
+    continuous_sneezing:
+      "Nonallergic rhinitis involves chronic sneezing or a congested, drippy nose with no apparent cause. Nonallergic rhinitis symptoms are similar to those of hay fever (allergic rhinitis), but with none of the usual evidence of an allergic reaction.  Nonallergic rhinitis can affect children and adults. But it's more common after age 20. Triggers of nonallergic rhinitis symptoms vary and can include certain odors or irritants in the air, weather changes, some medications, certain foods, and chronic health conditions.  A diagnosis of nonallergic rhinitis is made after an allergic cause is ruled out. This may require allergy skin or blood tests.  shivering :our body regulates its responses to heat, cold, stress, infection, and other conditions without any conscious thought. You sweat to cool the body when you get overheated, for example, but you don’t have to think about it. And when you get cold, you shiver automatically.  A shiver is caused by your muscles tightening and relaxing in rapid succession. This involuntary muscle movement is your body’s natural response to getting colder and trying to warm up.  Responding to a cold environment, however, is only one reason why you shiver. Illness and other causes can also make you shake and shiver.",
+    chills:
+      "Chills are your body's way of raising its core temperature. Cold temperatures, viruses, infections and other illnesses can bring on chills. When you shiver, your muscles relax and contract. This involuntary movement warms your body. Chills and fever often go together. But not everyone with a fever gets chills. And you can get chills with no fever.",
+    joint_pain:
+      "Joint discomfort is common and usually felt in the hands, feet, hips, knees, or spine. Pain may be constant or it can come and go. Sometimes the joint can feel stiff, achy, or sore. Some patients complain of a burning, throbbing, or grating sensation. In addition, the joint may feel stiff in the morning but loosen up and feel better with movement and activity. However, too much activity could make the pain worse.  Joint pain may affect the function of the joint, and can limit a person’s ability to do basic tasks. Severe joint pain can affect the quality of life. Treatment should focus not only on pain but also on the affected activities and functions.",
+    stomach_pain:
+      "Abdominal pain has many causes, some more serious than others. What feels like a stomachache may be coming from another organ in your abdomen, or from outside of your digestive system. Always seek medical care if your abdominal pain is unexplained, persistent or severe.",
+    stomach_pain:
+      "Abdominal pain has many causes, some more serious than others. What feels like a stomachache may be coming from another organ in your abdomen, or from outside of your digestive system. Always seek medical care if your abdominal pain is unexplained, persistent or severe.",
+    acidity:
+      "The food we eat goes into our stomach through the esophagus. The gastric glands in your stomach create acid, which is necessary to digest the food. When the gastric glands create more acid than needed for the digestion process, you can feel a burning sensation below the breastbone. This condition is commonly known as acidity.  Acidity, also called acid reflux, is a condition that is characterized by heartburn that is felt around the lower chest area. It is a common condition that occurs when stomach acid flows back up into the food pipe.  The most common acid reflux symptom is a burning sensation in the chest or pain. While most people suffer in pain, they do not realize that poor lifestyle choices are the primary reason behind acidity.  When acidity symptoms occur more than twice a week, your doctor may diagnose you with Gastroesophageal reflux disease or GERD. Chronic acidity may lead to serious risks that include:      Esophagus damage: Esophagus is the tube that connects your mouth to your stomach and when acid moves back up and enters the esophagus, it sets the stage for esophageal ulcers, oesophagitis, esophageal strictures, and Barrett’s Oesophagus.     Esophagus cancer: There is an increased risk of esophagus cancer, which is more likely if you have a history of the condition in the family.     Cavities/tooth decay: Acid reflux can wear down the enamel of your teeth and lead to cavities.",
+
+    ulcers_on_tongue:
+      "Ulcer is an idiopathic condition you can not directly come to a single cause of it. I think as per your symptoms you may have  sharp edges of lower and upper molars. You should also have a regular diet to avoid constipation and other indigestion difficulties to avoid heat and this will indirectly reduce your ulcers. Have ninefol tab twice a day and apply amlenox gel twice a day",
+    muscle_wasting:
+      "There are three types of muscle atrophy: physiologic, pathologic, and neurogenic  Physiologic atrophy is caused by not using the muscles enough. This type of atrophy can often be reversed with exercise and better nutrition. People who are most affected are those who:      Have seated jobs, health problems that limit movement, or decreased activity levels     Are bedridden     Cannot move their limbs because of stroke or other brain disease     Are in a place that lacks gravity, such as during space flights ",
+    vomitng:
+      "ausea and vomiting are not diseases, but rather are symptoms of many different conditions, such as infection , food poisoning, motion sickness, overeating, blocked intestine, illness, concussion or brain injury, appendicitis and migraines. Nausea and vomiting can sometimes be symptoms of more serious diseases such as heart attacks, kidney or liver disorders, central nervous system disorders, brain tumors, and some forms of cancer.",
+    burning_micturition:
+      "f you think you might have a UTI, don't worry. Diagnosing one requires a simple urinalysis. You urinate into a cup, and your clinician examines the urine for signs of infection. The standard course of treatment is three to five days of antibiotics.  In some cases, especially if your infections keep coming back, your practitioner may order a urine culture, a specific test for UTIs. A culture identifies the bacteria causing your infection so your clinician can choose the most effective antibiotic to treat it. The results of a urine culture are typically not available for two to four days.",
+    weight_gain:
+      "Gaining weight when you are not trying to do so can have many causes.  Metabolism slows down as you age. This can cause weight gain if you eat too much, eat the wrong foods, or do not get enough exercise.  Drugs that can cause weight gain include:      Birth control pills     Corticosteroids     Some drugs used to treat bipolar disorder, schizophrenia, and depression     Some drugs used to treat diabetes",
+    anxiety:
+      "Anxiety is a feeling of fear, dread, and uneasiness. It might cause you to sweat, feel restless and tense, and have a rapid heartbeat. It can be a normal reaction to stress. For example, you might feel anxious when faced with a difficult problem at work, before taking a test, or before making an important decision. It can help you to cope. The anxiety may give you a boost of energy or help you focus. But for people with anxiety disorders, the fear is not temporary and can be overwhelming.",
+    cold_hands_and_feets:
+      "Our bodies are designed to regulate our temperature. When it's cold outside, your body makes sure to keep the blood flowing to your core and vital organs to keep them warm. This can change the amount of blood flow to your hands and feet, making them feel cold. This is normal. The blood vessels in your hands and feet constrict (spasm) when it’s cold, to prevent heat loss from your core.  Some people tend to have colder feet and hands naturally, without an underlying disease. It’s a fairly common conditionTrusted Source. When your hands and feet naturally tend to get cold, you may just need to take extra precautions in cold weather to protect them.  But if your cold feet and hands are constantly bothersome, or if you notice additional symptoms, such as color changes in your fingers, there are more things you can do. ",
+    mood_swings:
+      "Many people have days where they feel sad or overjoyed. When shifts in mood don't affect your daily schedule regularly, they’re generally considered to be typical.  On the other hand, if you have large shifts from happiness to depression on a regular basis, you should speak with your doctor. They can discuss the possible reasons you’re experiencing them.  Some causes of rapid changes in behavior can be related to mental health, hormones, substance use, or other health conditions.",
+    spotting_urination:
+      "Blood in your urine is called hematuria. The amount may be very small and only detected with urine tests or under a microscope. In other cases, the blood is visible. It often turns the toilet water red or pink. Or, you may see spots of blood in the water after urinating.",
+    fatigue:
+      "Fatigue is a term used to describe an overall feeling of tiredness or lack of energy. It isn't the same as simply feeling drowsy or sleepy. When you’re fatigued, you have no motivation and no energy. Being sleepy may be a symptom of fatigue, but it’s not the same thing.  Fatigue is a common symptom of many medical conditions that range in severity from mild to serious. It’s also a natural result of some lifestyle choices, such as lack of exercise or poor diet.  If your fatigue doesn’t resolve with proper rest and nutrition, or you suspect it’s caused by an underlying physical or mental health condition, see your doctor. They can help diagnose the cause of your fatigue and work with you to treat it. ",
+    weight_gain:
+      "Unintentional weight gain occurs when you put on weight without increasing your consumption of food or liquid and without decreasing your activity. This occurs when you’re not trying to gain weight. It’s often due to fluid retention, abnormal growths, constipation, or pregnancy.  Unintentional weight gain can be periodic, continuous, or rapid.  Periodic unintentional weight gain includes regular fluctuations in weight. One example of unintentional weight gain is experienced during a woman’s menstrual cycle. Periodic, but longer-term unintentional weight gain is often the result of pregnancy, which lasts nine months.  Rapid unintentional weight gain may be due to medication side effects. Many cases of unintentional weight gain are harmless. But some symptoms experienced along with rapid weight gain may signal a medical emergency.",
+    weight_loose:
+      "Weight loss is not the answer to every health problem, but if your doctor recommends it, there are tips to help you lose weight safely. A steady weight loss of 1 to 2 pounds per week is recommended for the most effective long-term weight management.  That said, many eating plans designed to help you lose weight leave you feeling hungry or unsatisfied, or they cut out major food groups and are not sustainable. These are major reasons why you might find it hard to stick to a healthier eating plan. ",
+    restlessness:
+      "Restlessness is feeling the need to constantly move, being unable to calm your mind, or a combination of the two. You may also experience hyperactivity, anxiety, palpitations, agitation, or insomnia.  People with motor restlessness often feel they have cramps in their arms or legs whenever they're not moving. They may have difficulty sitting still while at work or relaxing at home, or have the urge to tap their hands or feet. Other people may experience mental restlessness, and have difficulty accomplishing tasks, managing time, or falling asleep at night.  Restlessness can be from stimulating medications, stopping medications, or drinking too much caffeine in a day. Hormonal imbalances, neurologic problems, pain, or mental health conditions can also cause restlessness.",
+    lethargy:
+      "Lethargy is a general state of fatigue that involves a lack of energy and motivation for physical and mental tasks.  Some simple causes, such as overexertion or not getting enough sleep, can leave a person feeling lethargic. In other cases, an underlying health condition may cause long-term lethargy and fatigue.  It may be necessary to see a doctor to determine the cause of lethargy if it lasts for a longer period of time. Getting a full diagnosis can help identify any underlying issues and work toward treatment.  Keep reading to learn more about the possible causes of lethargy, how to treat them, and when to see a doctor. ",
+    increased_appetite: "Increased appetite means you have an excess desire for food.An increased appetite can be a symptom of different diseases. For example, it may be due to a mental condition or a problem with the endocrine gland.An increased appetite can come and go (intermittent), or it can last for long periods of time (persistent). This will depend on the cause. It does not always result in weight gain.",
+    polyuria: "Polyuria is usually the result of drinking excessive amounts of fluids (polydipsia), particularly water and fluids that contain caffeine or alcohol. It is also one of the major signs of diabetes mellitus. When the kidneys filter blood to make urine, they reabsorb all of the sugar, returning it to the bloodstream.",
+    family_history: "A record of the relationships among family members along with their medical histories. This includes current and past illnesses. A family history may show a pattern of certain diseases in a family. Also called family medical history",
+    mucoid_sputum: "Mucoid sputum is a type of sputum that appears as a thick, sticky, and clear or white-colored substance. It is produced when the respiratory system is irritated, such as by a respiratory infection, allergies, or chronic obstructive pulmonary disease (COPD). The main component of mucoid sputum is mucus, which is a viscous fluid secreted by the cells lining the respiratory tract to protect and lubricate the airways.Mucoid sputum is a common symptom of respiratory conditions, and its presence can be an indication of the severity of the underlying condition. In some cases, the production of mucoid sputum can be excessive and can obstruct the airways, leading to difficulty breathing, coughing, and chest discomfort.",
+    rusty_sputum: "Rusty sputum is a term used to describe sputum (a mixture of saliva and mucus that is coughed up from the respiratory tract) that is tinged with red, brown or orange color, which can resemble rust. It can be a symptom of certain medical conditions such as pneumonia, tuberculosis, or lung cancer.The discoloration of sputum is caused by the presence of blood or pus in the respiratory tract. In pneumonia, for example, the inflammation and infection in the lungs can cause small blood vessels to rupture and lead to the presence of blood in the sputum. Rusty sputum is usually considered a concerning symptom and requires medical attention, especially if it is accompanied by other symptoms such as fever, chest pain, shortness of breath, or coughing up large amounts of blood.",
+
+    lack_of_concentration: "Lack of concentration is a common problem that can be caused by factors such as fatigue, stress, mental health conditions, ADHD, medications, and more. To improve focus and attention, you can try strategies such as getting enough sleep, exercising, reducing distractions, practicing mindfulness, setting priorities, taking breaks, eating a healthy diet, and seeking professional help if needed.",
+    visual_disturbance: "Visual disturbance refers to abnormal changes in a person's vision that can be caused by eye conditions or migraines. Examples include blurred vision, flashes of light, blind spots, and double vision. Treatment depends on the underlying cause and may involve medications, surgery, or lifestyle changes.",
+    receiving_blood_transfusion: "Blood transfusion is a medical procedure in which blood or blood products are transferred from one person (the donor) to another person (the recipient). It is typically done to replace blood that has been lost due to injury or surgery, or to treat medical conditions such as anemia or bleeding disorders. Before a transfusion, the blood type of the donor and recipient is checked to ensure compatibility. The transfusion is typically done through an IV line and closely monitored for any adverse reactions. Risks associated with transfusion include infection, allergic reactions, and complications related to incorrect matching or transfusing too much blood. Transfusions are generally considered safe and can be life-saving in certain situations.",
+
+    receiving_unsterile_injections: "Receiving unsterile injections can pose a significant risk to your health. When a needle is reused or not properly sterilized, it can transmit infections and diseases from one person to another. These infections can range from minor, such as skin infections, to severe and potentially life-threatening, such as hepatitis B and C, HIV, and other bloodborne pathogens.If you suspect that you have received an unsterile injection, it is essential to seek medical attention immediately. Some signs and symptoms of infection may include pain, redness, swelling, fever, chills, and fatigue.",
+    coma: "Coma is a state of unconsciousness in which a person is unable to respond to stimuli, such as sound or touch. It is a medical emergency and can result from various causes, including traumatic brain injury, stroke, brain hemorrhage, drug overdose, and infections such as meningitis or encephalitis.While in a coma, the person's brain is in a state of profound and prolonged depression, leading to a decreased level of consciousness. The person is usually unresponsive and cannot communicate or interact with their surroundings.",
+
+    stomach_bleeding: "Stomach bleeding is a condition where the lining of the stomach or intestines develops a sore and starts bleeding. It can be caused by various factors such as stomach ulcers, alcohol abuse, and certain medications. Symptoms include dark, tarry stools and vomiting blood. Treatment options depend on the cause and severity of the bleeding and may involve medications, endoscopy, or surgery. It is essential to seek medical attention immediately if you suspect stomach bleeding.",
+
+    distension_of_abdomen: "Abdominal distension is a condition characterized by an enlarged or swollen abdomen. It can be caused by various factors, such as gas accumulation, constipation, fluid retention, and pregnancy. Other causes may include certain medical conditions like liver or kidney disease, bowel obstruction, and tumors. Symptoms include a visibly swollen abdomen, discomfort, and pain. Treatment options depend on the underlying cause and may include medication, lifestyle changes, and surgery in some cases. It is essential to consult a doctor if you experience persistent abdominal distension.",
+    history_of_alcohol_consumption: "A history of alcohol consumption refers to a record of a person's past drinking habits. Excessive and long-term alcohol consumption can have severe consequences on physical and mental health. Doctors may ask about a patient's history of alcohol consumption when evaluating symptoms related to alcohol use.",
+
+    fluid_overload: "Fluid overload is a condition where there is too much fluid in the body. This can occur due to a variety of reasons such as heart or kidney failure, liver disease, or excessive fluid intake. It can cause symptoms such as swelling, weight gain, shortness of breath, and fatigue. Treatment involves identifying and addressing the underlying cause, as well as reducing fluid intake and using medications to remove excess fluid from the body. If left untreated, fluid overload can lead to serious complications such as pulmonary edema and heart failure.",
+
+    blood_in_sputum: "Blood in sputum is when there is blood or blood-tinged phlegm when coughing. It can be caused by respiratory infections such as acute bronchitis, pneumonia, or tuberculosis.",
+    prominent_veins_on_calf: "Prominent veins on the calf could be caused by various reasons such as aging, genetics, or underlying medical conditions. These conditions can include varicose veins, deep vein thrombosis (DVT), or peripheral artery disease (PAD). It is best to consult a healthcare provider to determine the underlying cause and appropriate treatment.",
+
+    palpitations: "Palpitations refer to the feeling of an irregular or rapid heartbeat, which can be felt as a fluttering, racing, or pounding sensation in the chest. Palpitations can be caused by various factors such as anxiety, stress, caffeine, alcohol, medication, or underlying medical conditions such as arrhythmias or heart disease. If palpitations are persistent or accompanied by chest pain, shortness of breath, or fainting, it is recommended to seek medical attention.",
+
+    painful_walking: "Painful walking, also known as claudication, is a symptom where an individual experiences pain or discomfort while walking. It can be caused by a variety of underlying conditions, such as peripheral artery disease (PAD), arthritis, or nerve damage. Claudication pain often goes away with rest but returns during activity. If left untreated, it can limit an individual's ability to perform daily activities. It is recommended to seek medical attention if experiencing claudication pain.",
+
+    pus_filled_pimples: "Pus-filled pimples, also known as pustules, are a common type of acne that occurs when pores become clogged with oil, dead skin cells, and bacteria. The body's natural response to this blockage is to send white blood cells to fight the bacteria, resulting in the formation of pus. Pustules can be treated with over-the-counter topical medications containing benzoyl peroxide or salicylic acid, or prescription medications such as topical or oral antibiotics. It is important not to pop or squeeze pustules, as this can lead to further inflammation and scarring. If acne is severe or persistent, it is recommended to consult a dermatologist.",
+
+    blackheads: "Blackheads are a type of acne that occur when hair follicles become clogged with oil, dead skin cells, and bacteria. The top of the clogged pore is open to the air, which causes the oil and dead skin cells to oxidize and turn black. Blackheads typically occur on the face, neck, chest, and back. They can be treated with over-the-counter topical medications containing salicylic acid or benzoyl peroxide, or prescription medications such as topical retinoids or oral antibiotics. It is important not to pick or squeeze blackheads, as this can lead to further inflammation and scarring. Regular cleansing and exfoliation can also help prevent the formation of blackheads.",
+
+    scurring: "",
+    skin_peeling: "Skin peeling is the shedding of the outer layer of skin cells. It can be caused by a variety of factors, such as sunburn, dry skin, skin infections, allergic reactions, or certain medical conditions. The severity and duration of skin peeling depend on the underlying cause. Mild skin peeling can be treated with topical moisturizers, while more severe cases may require medical treatment such as topical or oral medications. It is important to avoid picking or peeling the skin, as this can lead to further irritation and infection. If skin peeling is accompanied by other symptoms such as itching, redness, or pain, it is recommended to consult a healthcare provider.",
+
+    silver_like_dusting: " possibly refer to a condition called acanthosis nigricans. Acanthosis nigricans is a skin disorder that causes dark, thick, and velvety patches of skin to develop, usually in skin folds such as the neck, armpits, groin, and under the breasts. The affected areas may have a silvery sheen or dusty appearance. Acanthosis nigricans is often associated with insulin resistance, obesity, and certain medications. It is important to see a healthcare provider for proper evaluation and treatment if you suspect you may have acanthosis nigricans or any other skin disorder.",
+
+    small_dents_in_nails: "Small dents in nails, also known as nail pitting, can be caused by a variety of underlying conditions. Some of the most common causes of nail pitting include psoriasis, eczema, alopecia areata, and connective tissue disorders such as lupus or rheumatoid arthritis. Nail pitting may also be a sign of certain infections, such as fungal infections or syphilis. Treatment for nail pitting depends on the underlying cause and may involve topical or oral medications, lifestyle changes, or surgery. It is important to see a healthcare provider for proper evaluation and treatment if you have concerns about nail pitting or any other nail changes.",
+
+    inflammatory_nails: "Inflammatory nail conditions refer to a group of disorders that affect the nails and are characterized by inflammation of the nail bed, nail matrix, or surrounding tissues. Some examples of inflammatory nail conditions include nail psoriasis, nail lichen planus, and onychomycosis (fungal infection of the nail). Symptoms may include changes in nail color, shape, texture, or thickness, as well as nail detachment, pain, or discomfort. Treatment for inflammatory nail conditions may involve topical or oral medications, lifestyle changes, or surgery. It is important to see a healthcare provider or dermatologist for proper evaluation and treatment if you have concerns about inflammatory nail conditions or any other nail changes.",
+
+    blister: "A blister is a raised area of skin that is filled with fluid. Blisters can be caused by a variety of factors, such as friction, burns, freezing, chemical exposure, or medical conditions such as herpes or chickenpox. Blisters can vary in size and appearance and may be accompanied by symptoms such as pain, itching, or redness. In most cases, blisters will heal on their own within a few days or weeks, but it is important to avoid popping or breaking the blister as this can increase the risk of infection. Treatment for blisters may involve applying a sterile bandage or dressing, avoiding tight or restrictive footwear or clothing, and taking pain-relieving medications if necessary. If you have concerns about a blister or if it is causing significant pain or discomfort, it is recommended to see a healthcare provider for proper evaluation and treatment.",
+
+    red_sore_around_nose: "A red sore around the nose could be caused by a variety of conditions, such as a cold sore, a pimple or acne, a rash, or an infection. Cold sores are caused by the herpes simplex virus and are characterized by small, fluid-filled blisters that may be painful or itchy. Pimples and acne can occur in the area around the nose due to excess oil production or bacterial infection. A rash may be caused by an allergic reaction or a skin condition such as eczema or rosacea. Infection can occur when bacteria enter a small cut or break in the skin and can cause redness, swelling, and pain.Treatment for a red sore around the nose depends on the underlying cause and may involve topical or oral medications, lifestyle changes, or other interventions. It is recommended to see a healthcare provider or dermatologist for proper evaluation and treatment if you have concerns about a red sore around your nose.",
+
+    yellow_crust_ooze: "Yellow crust or ooze is often a sign of infection or inflammation. It can be caused by a variety of conditions, such as impetigo, a bacterial skin infection that is characterized by yellow, crusty sores; eczema, a chronic skin condition that can cause yellow crusts or flakes; or a severe allergic reaction that results in the formation of blisters or sores that ooze yellow fluid.Treatment for yellow crust or ooze depends on the underlying cause and may involve topical or oral medications, wound care, or other interventions. It is important to see a healthcare provider or dermatologist for proper evaluation and treatment if you have concerns about yellow crust or ooze on your skin, as some conditions can be highly contagious or may lead to serious complications if left untreated.",
+
+    phlegm: "phlegm is mucus produced by the respiratory system, excluding that produced by the nasal passages. It often refers to respiratory mucus expelled by coughing, otherwise known as sputum. Phlegm, and mucus as a whole, is in essence a water-based gel consisting of glycoproteins, immunoglobulins, lipids and other substances. Its composition varies depending on climate, genetics, and state of the immune system. Its color can vary from transparent to pale or dark yellow and green, from light to dark brown, and even to dark grey depending on the constituents. The body naturally produces about 1 quart (about 1 litre) of phlegm every day to capture and clear substances in the air and bacteria from the nose and throat.",
+    throat_irritation: "A sore throat can make it painful to swallow. A sore throat can also feel dry and scratchy. Sore throat can be a symptom of strep throat, the common cold, allergies, or other upper respiratory tract illness. Sore throat caused by a virus or the bacteria called group A Streptococcus can have similar symptoms.",
+    redness_of_eyes: "Redness of the eye, also called bloodshot eyes, can indicate the presence of several different health issues. While some of these issues are benign, others are serious and require emergency medical attention.  The redness of your eye may be a cause for concern. However, most serious eye problems happen when you have redness along with pain or changes in your vision.",
+    sinus_pressure: "Sinusitis is caused by an increase in vata and kapha dosha in the region above the clavicle, according to Ayurveda. Internal medications, external therapies, detoxification of the body (panchakarma), dietary changes, and lifestyle activities are the mainstays of Ayurvedic treatment. Nasya therapy is recommended as the best Ayurvedic treatment for sinusitis in the Panchakarma treatment.",
+    runny_nose: "A runny nose is mucus being discharged out of the nose. It can be caused by colder outdoor temperatures, or by the cold, flu, or allergies. Treatment includes drinking plenty of fluids, especially water, and resting as much as possible. You can ease symptoms with a saline nasal spray, and place a cool-mist humidifier near your bed to combat congestion aggravated by cold dry air.",
+    congestion: "Nasal congestion or stuffy nose occurs when nasal and adjacent tissues and blood vessels become swollen with excess fluid, causing a stuffy plugged feeling. Nasal congestion may or may not include a nasal discharge or runny nose.  Nasal congestion usually is just an annoyance for older children and adults. But nasal congestion can be serious for children whose sleep is disturbed by their nasal congestion, or for infants, who might have a hard time feeding as a result.",
+    chest_pain: "Chest pain appears in many forms, ranging from a sharp stab to a dull ache. Sometimes chest pain feels crushing or burning. In certain cases, the pain travels up the neck, into the jaw, and then spreads to the back or down one or both arms.  Many different problems can cause chest pain. The most life-threatening causes involve the heart or lungs. Because chest pain can indicate a serious problem, it's important to seek immediate medical help.",
+    weakness_in_limbs: "Many health conditions can cause muscle weakness. Examples include: neuromuscular disorders, such as muscular dystrophies, multiple sclerosis (MS), amyotrophic lateral sclerosis (ALS) autoimmune diseases, such as Graves' disease, myasthenia gravis, and Guillain-Barré syndrome",
+    fast_heart_rate: "Tachycardia (tak-ih-KAHR-dee-uh) is the medical term for a heart rate over 100 beats a minute. Many types of irregular heart rhythms (arrhythmias) can cause tachycardia.  A fast heart rate isn't always a concern. For instance, the heart rate typically rises during exercise or as a response to stress.  Tachycardia may not cause any symptoms or complications. But if left untreated, some forms of tachycardia can lead to serious health problems, including heart failure, stroke or sudden cardiac death.",
+    pain_during_bowel_movements: "Painful bowel movements have many potential causes. Some — including constipation, diarrhea, and hemorrhoids — are treatable at home. However, other causes may require medical attention. People who find blood in their stools or feel severe pain during bowel movements should see a doctor for advice and treatment.",
+    pain_in_anal_region: "An anal fissure or fissure-in-ano is a small, cut in the skin in anal passage which results because of trauma to skin by passing hard stool in this region. Sometimes pain is so severe that patient tends to avoid passing stool in an attempt to stay away from pain.",
+    bloody_stool: "Rectal bleeding is a symptom of conditions like hemorrhoids, anal fissures, inflammatory bowel disease (IBD), ulcers and colorectal cancer. Typically, you notice rectal bleeding on toilet paper, in the water of the toilet bowl or in your stool.",
+    neck_pain: "Poor posture — whether from leaning over a computer or hunching over a workbench — strains neck muscles. Osteoarthritis also is a common cause of neck pain.  Rarely, neck pain can be a symptom of a more serious problem. Seek medical care for neck pain with numbness or loss of strength in the arms or hands or for pain that shoots into a shoulder or down an arm.",
+    dizziness: "Dizziness is a term used to describe a range of sensations, such as feeling faint, woozy, weak or unsteady. Dizziness that creates the false sense that you or your surroundings are spinning or moving is called vertigo. Dizziness is one of the more common reasons adults visit their doctors",
+    cramps: "A muscle cramp is a sudden and involuntary contraction of one or more of your muscles. If you've ever been awakened in the night or stopped in your tracks by a sudden charley horse, you know that muscle cramps can cause severe pain.",
+    bruising: "A bruise forms when blood vessels under the skin break. The trapped blood creates a bruise that's black, purple or blue then changes color as it heals. You can enhance bruise healing with a few simple techniques. Elevate the bruised area above heart level, if possible. A   obesity : Obesity is a complex disease involving an excessive amount of body fat. Obesity isn't just a cosmetic concern. It's a medical problem that increases the risk of other diseases and health problems, such as heart disease, diabetes, high blood pressure and certain cancers.",
+    swollen_legs: "Leg swelling isn't always a sign of a heart or circulation problem. You can have swelling due to fluid buildup simply from being overweight, being inactive, sitting or standing for a long time, or wearing tight stockings or jeans. Factors related to fluid buildup include: Acute kidney failure.",
+    swollen_blood_vessels: "Vasculitis involves inflammation of the blood vessels. The inflammation can cause the walls of the blood vessels to thicken, which reduces the width of the passageway through the vessel. If blood flow is restricted, it can result in organ and tissue damage.",
+    puffy_face_and_eyes: "The most common causes of facial swelling arise from a dental or skin infection, or an allergic reaction which can also cause hives, wheezing, and vomiting. Other causes of face swelling include dehydration, hormonal imbalance, or physical trauma to the face.",
+    enlarged_thyroid: "A goitre is a lump or sweling at the front of the neck caused by a swollen thyroid. The thyroid is a small gland in your neck that makes hormones. Goitres are not usually serious but should be checked by a GP.",
+    brittle_nails: "Everything from aging to poor nutrition can make your nails dry, thin, and easy to break. There are also some treatments and medical conditions that can make them brittle. But you don't have to put up with the problem. The right care can make all the difference in keeping your nails healthy and strong.",
+    swollen_extremeties: "staying in the same position for too long. eating too much salty food. being pregnant. taking certain medicines – such as some blood pressure medicines, contraceptive pills, antidepressants and steroids.",
+    excessive_hunger: "Hunger is your body's natural cue that it needs more food.  When you’re hungry, your stomach may “growl” and feel empty, or you may get a headache, feel irritable, or be unable to concentrate.  Most people can go several hours between meals before feeling hungry again, though this isn't the case for everyone.  There are several possible explanations for this, including a diet that lacks protein, fat, or fiber, as well as excessive stress or dehydration.",
+
+
+    drying_and_tingling_lips: "Chapped or cracked lips are often sore or tingle. This can happen when lips become very dry during the winter, in a hot climate, or if someone has a skin condition, such as eczema.Using a moisturizing lip balm can make skin softer and prevent cracking or splitting. ",
+    slurred_speech: " Slurred speech or speech disorders are a symptom characterized by the poor pronunciation of words, mumbling, or a change in speed or rhythm during a conversation. The medical term for speech disorders is dysarthria.Speech disorders may develop slowly over time or follow a single incident. Speech problems can be temporary or permanent, depending on the underlying cause.",
+    knee_pain: " Knee pain is a common complaint that affects people of all ages. Knee pain may be the result of an injury, such as a ruptured ligament or torn cartilage. Medical conditions — including arthritis, gout and infections — also can cause knee pain.Many types of minor knee pain respond well to self-care measures. Physical therapy and knee braces also can help relieve pain. In some cases, however, your knee may require surgical repair.",
+    hip_joint_pain: " Hip pain can have causes that aren t due to underlying disease. Examples include trauma, lying on a side for a prolonged period, overuse, muscle stiffness, sitting in an awkward position, sprains or strains.",
+    muscle_weakness: " Muscle weakness can have causes that aren t due to underlying disease. Examples include poor physical conditioning, intense exercise, recovery from strength training or malnutrition.",
+    stiff_neck: "A stiff neck can have causes that aren t due to underlying disease. Examples include sprains, strains, sleeping in an uncomfortable position, sitting at a desk with poor ergonomics or lack of movement.",
+    swelling_joints: "Arthritis is the swelling and tenderness of one or more joints. The main symptoms of arthritis are joint pain and stiffness, which typically worsen with age. The most common types of arthritis are osteoarthritis and rheumatoid arthritis.",
+    movement_stiffness: " Muscle stiffness most commonly arises after the overuse of skeletal muscles, which tends to happen after a long period of minimal motion (e.g., after extended bed rest) or after engaging in new exercises. These actions can cause temporary damage to the muscle cells, leading to stiffness. Muscle stiffness from overuse of the muscles occurs most frequently among people who do not exercise often.",
+    spinning_movements: " .",
+    loss_of_balance: "Losing your balance while walking, or feeling imbalanced, can result from: Vestibular problems. Abnormalities in your inner ear can cause a sensation of a floating or heavy head and unsteadiness in the dark. Nerve damage to your legs (peripheral neuropathy). The damage can lead to difficulties with walking.",
+    unsteadiness: "Balance problems due to high blood pressure may be managed by eating less salt (sodium), maintaining a healthy weight, and exercising. Balance problems due to low blood pressure may be managed by drinking plenty of fluids such as water  , avoiding alcohol  , and being cautious regarding your body's posture and movement, such as never standing up too quickly. Consult with your doctor about making any changes in your diet or activity level.",
+    weakness_of_one_body_side: " Hemiplegia is paralysis, which means you can't move or control the muscles in the affected body part. That can cause muscles that are completely limp. It can also cause spastic hemiplegia, a type of paralysis where muscles contract uncontrollably. Hemiplegia affects either the right side of your body (right hemiplegia) or the left side of your body (left hemiplegia), with your spine (backbone) being the dividing line between the two halves.",
+    loss_of_smell: "Loss of smell can have causes that aren t due to underlying disease. Examples include smoking, medication side effects, nasal obstruction or mucus.",
+    bladder_discomfort: " A urinary tract infection (UTI) can cause short-term (temporary) discomfort and urgency. People with chronic problems like interstitial cystitis (IC) can experience ongoing bladder pain. IC is an inflammation (swelling) in the wall of the bladder. Bladder irritation by itself is not usually an emergency.",
+    foul_smell_of_urine: " Some foods and medications, such as asparagus or certain vitamins, can cause a noticeable urine odor, even in low concentrations. Sometimes, unusual urine odor indicates a medical condition or disease, such as: Cystitis (bladder inflammation) Dehydration.",
+    continuous_feel_of_urine: " Several factors may be linked to frequent urination, such as: Infection, disease, injury or irritation of the bladder. Conditions that increase urine production. Changes in muscles, nerves or other tissues affecting bladder function.",
+    passage_of_gases: ".",
+    internal_itching: " Itching on the whole body might be a symptom of an underlying illness, such as liver disease, kidney disease, anemia, diabetes, thyroid problems and certain cancers. Nerve disorders. Examples include multiple sclerosis, pinched nerves and shingles (herpes zoster). Psychiatric condition.",
+    toxic_look: " Scrub typhus, also known as bush typhus, is a disease caused by a bacteria called Orientia tsutsugamushi. Scrub typhus is spread to people through bites of infected chiggers (larval mites). The most common symptoms of scrub typhus include fever, headache, body aches, and sometimes rash.",
+    depression: " Depression is a mood disorder that causes a persistent feeling of sadness and loss of interest. Also called major depressive disorder or clinical depression, it affects how you feel, think and behave and can lead to a variety of emotional and physical problems. You may have trouble doing normal day-to-day activities, and sometimes you may feel as if life is n't worth living.",
+    irritability: "Irritability can be normal, and is only an indicator of underlying disease when feelings become excessive, all-consuming and interfere with daily living.",
+    muscle_pain: " Muscle pain can have causes that aren t due to underlying disease. Examples include exercise, prolonged sitting or lying down, doing a new physical activity for the first time, sprains or strains.",
+    altered_sensorium: " A clouded sensorium, also known as an altered sensorium, is a medical condition characterized by the inability to think clearly or concentrate. It is usually synonymous with, or substantially overlapping with, altered level of consciousness.",
+    red_spots_over_body: " There are several possible causes for red dots on the skin, including heat rash, KP, contact dermatitis, and atopic dermatitis. Red dots on the skin may also occur due to more serious conditions, such as a viral or bacterial infection.",
+    belly_pain: "Abdominal pain can have causes that aren t due to underlying disease. Examples include constipation, wind, overeating, stress or muscle strain.",
+    abnormal_menstruation: " Irregular menstruation can have causes that aren t due to underlying disease. Examples include family history of irregular menstruation, menopause or menarche, physical stress, psychological stress, smoking or medication side effects.",
+    dischromic: " Dyschromia is a patchy or irregular skin discoloration. This is generally caused by vascular changes in the blood vessels, variations in melanin density or foreign organisms growing within the skin. This is often referred to as mottled or mottling skin.",
+    watering_from_eyes: " an allergy or infection (conjunctivitis) blocked tear ducts (the small tubes that tears drain into) your eyelid drooping away from the eye (ectropion) or other eyelid problems. dry eye syndrome  this can cause your eyes to produce too many tears.",
+    //  down from here for disease set
+    fungal_infection: "A fungus that invades the tissue can cause a disease that s confined to the skin, spreads into tissue, bones and organs or affects the whole body.",
+    allergy: "Allergies occur when your immune system reacts to a foreign substance — such as pollen, bee venom or pet dander — or a food that doesn't cause a reaction in most people. Your immune system produces substances known as antibodies.",
+    gerd: "A digestive disease in which stomach acid or bile irritates the food pipe lining.This is a chronic disease that occurs when stomach acid or bile flows into the food pipe and irritates the lining. Acid reflux and heartburn more than  twice a week may indicate GERD.",
+    chronic_cholestasis: "Chronic cholestatic diseases, whether occurring in infancy, childhood or adulthood, are characterized by defective bile acid transport from the liver to the intestine, which is caused by primary damage to the biliary epithelium in most cases.",
+    drug_reaction: "A drug allergy is the reaction of the immune system to a medicine. Any medicine — nonprescription, prescription or herbal — can provoke a drug allergy. However, a drug allergy is more likely with certain medicines. The most common symptoms of drug allergy are hives, rash or fever.",
+    peptic_ulcer_isease: "A sore that develops on  the lining of the oesophagus, stomach or small intestine. Ulcers occur when stomach acid damages the lining of the digestive tract. Common causes include the bacteria H. Pylori and anti-inflammatory pain relievers including aspirin.",
+    aids: " .",
+    diabetes: " Diabetes is a chronic disease that occurs either when the pancreas does not produce enough insulin or when the body cannot effectively use the insulin it produces. Insulin is a hormone that regulates blood glucose. Hyperglycaemia, also called raised blood glucose or raised blood sugar, is a common effect of uncontrolled diabetes and over time leads to serious damage to many of the body s systems, especially the nerves and blood vessels.",
+    gastroenteritis: "An intestinal infection marked by diarrhoea, cramps, nausea, vomiting and fever. Stomach flu is typically spread by contact with an infected person or through contaminated food or water.",
+    bronchial_asthma: " A condition in which a person s airways become inflamed, narrow and swell and produce extra mucus, which makes it difficult to breathe.Asthma can be minor or it can interfere with daily activities. In some cases, it may lead to a life-threatening attack.",
+    hypertension: " A condition in which the force of the blood against the artery walls is too high.Usually hypertension is defined as blood pressure above 140/90, and is considered severe if the pressure is above 180/120.",
+    migraine: " A headache of varying intensity, often accompanied by nausea and sensitivity to light and sound.Migraine headaches are sometimes preceded by warning symptoms. Triggers include hormonal changes, certain food and drink, stress and exercise.",
+    cervical_spondylosis: " A general term for age-related wear and tear of the spinal discs.Spondylosis is common and worsens with age. This condition is often used to describe degenerative arthritis (osteoarthritis) of the spine.",
+    paralysis: "Paralysis occurs when you're unable to make voluntary muscle movements. A nervous system problem causes paralysis.Uninjured nerves send signals to muscles. Those signals make muscles move. When you're paralyzed, or have paralysis, you can't move certain parts of your body.",
+    jaundice: "Yellow skin caused by the build-up of bilirubin in the blood.Jaundice may occur if the liver can t efficiently process red blood cells as they break down. It s normal in healthy newborns and usually clears on its own. At other ages, it may signal infection or liver disease.",
+    malaria: " A disease caused by a plasmodium parasite, transmitted by the bite of infected mosquitoes.The severity of malaria varies based on the species of plasmodium.",
+    chicken_pox: "A highly contagious viral infection which causes an itchy, blister-like rash on the skin.Chickenpox is highly contagious to those who haven t had the disease or been vaccinated against it.",
+    dengue: " A mosquito-borne viral disease occurring in tropical and subtropical areas.Those who become infected with the virus a second time are at a significantly greater risk of developing severe disease.",
+    typhoid: " Typhoid fever is an infection that spreads through contaminated food and water.Vaccines are recommended in areas where typhoid fever is common.",
+    hepatitis: " A highly contagious liver infection caused by the hepatitis A virus.Hepatitis A is preventable by vaccine. It spreads from contaminated food or water or contact with someone who is infected.",
+    // hepatitis_b: " A serious liver infection caused by the hepatitis B virus that s easily preventable by a vaccine.This disease is most commonly spread by exposure to infected bodily fluids.",
+    // hepatitis_c: " An infection caused by a virus that attacks the liver and leads to inflammation.The virus is spread by contact with contaminated blood  , for example, from sharing needles or from unsterile tattoo equipment.",
+    // hepatitis_d: " A serious liver disease caused by infection with the hepatitis D virus.Hepatitis D only occurs amongst people who are infected with the Hepatitis B virus. Transmission requires contact with infectious blood. At-risk populations include intravenous drug abusers and men who have sex with men.",
+    // hepatitis_e: " A liver disease caused by the hepatitis E virus. The hepatitis E virus is mainly transmitted through drinking water contaminated with faecal matter.",
+    alcoholic_hepatitis: " Liver inflammation caused by drinking too much alcohol.Alcoholic hepatitis can occur in people who drink heavily for many years.",
+    tuberculosis: "A potentially serious infectious bacterial disease that mainly affects the lungs.The bacteria that cause TB are spread when an infected person coughs or sneezes.",
+    common_cold: "A common viral infection of the nose and throat. In contrast to the flu, a common cold can be caused by many different types of viruses. The condition is generally harmless and symptoms usually resolve within two weeks.",
+    pneumonia: " Infection that inflames air sacs in one or both lungs, which may fill with fluid.With pneumonia, the air sacs may fill with fluid or pus. The infection can be life-threatening to anyone, but particularly to infants, children and people over 65.",
+    dimorphic_hemmorhoids_piles: " Hemorrhoids (or haemorrhoids), also known as piles, are vascular structures in the anal canal.In their normal state, they are cushions that help with stool control.They become a disease when swollen or inflamed  , the unqualified term hemorrhoid is often used to refer to the disease. The signs and symptoms of hemorrhoids depend on the type present. Internal hemorrhoids often result in painless, bright red rectal bleeding when defecating.External hemorrhoids often result in pain and swelling in the area of the anus. If bleeding occurs, it is usually darker. Symptoms frequently get better after a few days. A skin tag may remain after the healing of an external hemorrhoid.",
+    heart_attack: "A blockage of blood flow to the heart muscle. A heart attack is a medical emergency. A heart attack usually occurs when a blood clot blocks blood flow to the heart. Without blood, tissue loses oxygen and dies.",
+    varicose_veins: " Gnarled, enlarged veins, most commonly appearing in the legs and feet.Varicose veins are generally benign. The cause of this condition is not known.",
+    hypothyroidism: " A condition in which the thyroid gland doesn't produce enough thyroid hormone.Hypothyroidism s deficiency of thyroid hormones can disrupt such things as heart rate, body temperature and all aspects of metabolism. Hypothyroidism is most prevalent in older women.",
+    hyperthyroidism: " Symptoms include unexpected weight loss, rapid or irregular heartbeat, sweating and irritability, although the elderly often experience no symptoms.",
+    hypoglycemia: " Low blood sugar, the body s main source of energy.Diabetes treatment and other conditions can cause hypoglycaemia.",
+    osteoarthristis: " A type of arthritis that occurs when flexible tissue at the ends of bones wears down.The wearing down of the protective tissue at the ends of bones (cartilage) occurs gradually and worsens over time.",
+    arthritis: "Inflammation of one or more joints, causing pain and stiffness that can worsen with age.Different types of arthritis exist, each with different causes including wear and tear, infections and underlying diseases.",
+    paroymsal_positional_vertigo: " (BPPV) is one of the most common causes of vertigo — the sudden sensation that you re spinning or that the inside of your head is spinning. BPPV causes brief episodes of mild to intense dizziness. It is usually triggered by specific changes in your head s position.",
+    urinary_tract_infection: " An infection in any part of the urinary system, the kidneys, bladder or urethra.Urinary tract infections are more common in women. They usually occur in the bladder or urethra, but more serious infections involve the kidney.",
+    psoriasis: "A condition in which skin cells build up and form scales and itchy, dry patches.Psoriasis is thought to be an immune system problem. Triggers include infections, stress and cold.",
+    impetigo: "A highly contagious skin infection that causes red sores on the face.Impetigo mainly affects infants and children.",
+    // upto here abut disease 
+  };
+
+
+  const symptomslist = ['itching', 'skin_rash', 'nodal_skin_eruptions', 'continuous_sneezing', 'shivering', 'chills', 'joint_pain',
+    'stomach_pain', 'acidity', 'ulcers_on_tongue', 'muscle_wasting', 'vomiting', 'burning_micturition', 'spotting_ urination',
+    'fatigue', 'weight_gain', 'anxiety', 'cold_hands_and_feets', 'mood_swings', 'weight_loss', 'restlessness', 'lethargy',
+    'patches_in_throat', 'irregular_sugar_level', 'cough', 'high_fever', 'sunken_eyes', 'breathlessness', 'sweating',
+    'dehydration', 'indigestion', 'headache', 'yellowish_skin', 'dark_urine', 'nausea', 'loss_of_appetite', 'pain_behind_the_eyes',
+    'back_pain', 'constipation', 'abdominal_pain', 'diarrhoea', 'mild_fever', 'yellow_urine',
+    'yellowing_of_eyes', 'acute_liver_failure', 'fluid_overload', 'swelling_of_stomach',
+    'swelled_lymph_nodes', 'malaise', 'blurred_and_distorted_vision', 'phlegm', 'throat_irritation',
+    'redness_of_eyes', 'sinus_pressure', 'runny_nose', 'congestion', 'chest_pain', 'weakness_in_limbs',
+    'fast_heart_rate', 'pain_during_bowel_movements', 'pain_in_anal_region', 'bloody_stool',
+    'irritation_in_anus', 'neck_pain', 'dizziness', 'cramps', 'bruising', 'obesity', 'swollen_legs',
+    'swollen_blood_vessels', 'puffy_face_and_eyes', 'enlarged_thyroid', 'brittle_nails',
+    'swollen_extremeties', 'excessive_hunger', 'extra_marital_contacts', 'drying_and_tingling_lips',
+    'slurred_speech', 'knee_pain', 'hip_joint_pain', 'muscle_weakness', 'stiff_neck', 'swelling_joints',
+    'movement_stiffness', 'spinning_movements', 'loss_of_balance', 'unsteadiness',
+    'weakness_of_one_body_side', 'loss_of_smell', 'bladder_discomfort', 'foul_smell_of urine',
+    'continuous_feel_of_urine', 'passage_of_gases', 'internal_itching', 'toxic_look_(typhos)',
+    'depression', 'irritability', 'muscle_pain', 'altered_sensorium', 'red_spots_over_body', 'belly_pain',
+    'abnormal_menstruation', 'dischromic _patches', 'watering_from_eyes', 'increased_appetite', 'polyuria', 'family_history', 'mucoid_sputum',
+    'rusty_sputum', 'lack_of_concentration', 'visual_disturbances', 'receiving_blood_transfusion',
+    'receiving_unsterile_injections', 'coma', 'stomach_bleeding', 'distention_of_abdomen',
+    'history_of_alcohol_consumption', 'fluid_overload', 'blood_in_sputum', 'prominent_veins_on_calf',
+    'palpitations', 'painful_walking', 'pus_filled_pimples', 'blackheads', 'scurring', 'skin_peeling',
+    'silver_like_dusting', 'small_dents_in_nails', 'inflammatory_nails', 'blister', 'red_sore_around_nose',
+    'yellow_crust_ooze']
+  // console.log(sympdata.hasOwnProperty("lethargy"));
+  // console.log(sympdata["lethargy"]);
+  let sympdataarr = new Map();
+  for (const [key, value] of Object.entries(sympdata)) {
+    sympdataarr.set(key, key.toString().split("_"));
+  }
+
+
+  function checksymp(transcript) {
+    let count = 0;
+    let mainkey;
+    let mx = 0;
+    for (let [key, value] of sympdataarr) {
+      for (let x of value) {
+        if ((transcript.indexOf(x) > -1)) {
+          count++;
+        }
+      }
+      if (count >= 1 && count > mx) {
+        mainkey = key;
+        mx = count;
+        count = 0;
+      }
+    }
+    if (mainkey) {
+      sympfromsympdata = sympdata[mainkey];
+      return true;
+    }
+    return false;
+  }
+
+
+  let sympdataarrfordiognise = new Map();
+  let diagnosesymptomsarr = [];
+  let currentdiagnosesymptom = "";
+  for (let value of symptomslist) {
+    sympdataarrfordiognise.set(value, value.toString().split("_"));
+  }
+
+  // console.log(sympdataarrfordiognise);
+
+  function checksympfordisease(transcript) {
+    let count = 0;
+    let mainkey;
+    let mx = 0;
+    for (let [key, value] of sympdataarrfordiognise) {
+      for (let x of value) {
+        if ((transcript.indexOf(x) > -1)) {
+          count++;
+        }
+      }
+      if (count >= 1 && count > mx) {
+        mainkey = key;
+        mx = count;
+        count = 0;
+      }
+    }
+    if (mainkey) {
+      // sympfromsympdata = sympdata[mainkey];
+      diagnosesymptomsarr.push(mainkey);
+      currentdiagnosesymptom = mainkey.split("_").join(' ');
+      return true;
+    }
+    return false;
+  }
+
+  let startdiognise = false;
+
+
+  function runSpeechRecognition() {
+
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const texto = document.querySelector("#output");
+    const speachstart = document.querySelector(".circle");
+    const micspeaking = document.querySelector(".miciconspeaking");
+    const micnotspeaking = document.querySelector(".miciconnotspeaking")
+    speachstart.classList.add("pulse");
+    var SpeechRecognition = SpeechRecognition || webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+
+    // This runs when the speech recognition service starts
+    recognition.onstart = function () {
+      // frida.classList.add("listening");
+    };
+
+    recognition.onsoundstart = () => {
+      micnotspeaking.classList.add("deactivate")
+      micspeaking.classList.remove("deactivate");
+      // console.log('Some sound is being received');
+    }
+
+    recognition.onsoundend = (event) => {
+      micspeaking.classList.add("deactivate");
+      micnotspeaking.classList.remove("deactivate");
+      // console.log('Sound has stopped being received');
+    }
+
+    // stop listenting the speech recognition
+    recognition.onspeechend = function () {
+      recognition.stop();
+      speachstart.classList.remove("pulse");
+    }
+
+    // This runs when the speech recognition service returns result
+    recognition.onresult = function (event) {
+      const transcript = event.results[0][0].transcript.toLowerCase();
+      const confidence = event.results[0][0].confidence;
+
+      let textToSpeak = " no command.";
+      console.log(transcript);
+      let speakflag = 0;
+      // only run the special sentences if confidence is "high"
+      if (confidence > 0.75) {
+        const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+        const month = ["january", "February", "march", "april", "may", "june", "jully", "agust", "septmber", "october", "november", "December"];
+        const d = new Date();
+
+        if ((transcript.indexOf("day") > -1 || transcript.indexOf(" dy") > -1) && transcript.indexOf(" de") > -1) {
+          textToSpeak = `today is ${days[d.getDay()]}`;
+        } else if ((transcript.indexOf(" tomorrow") > -1 || transcript.indexOf(" tmaro") > -1) && transcript.indexOf("tomaroow") > -1) {
+          const n = d.getDay();
+          textToSpeak = `tomorrow is  ${days[(n + 1) % 7]}`;
+        } else if (transcript.indexOf("time") > -1) {
+          let hour = d.getHours();
+          if (hour > 12) hour -= 12;
+          if (hour === 0) hour = 12;
+          const minutes = d.getMinutes();
+          let textMinutes = `y ${minutes} minutes`;
+          if (minutes === 0) { textMinutes = "0 minutes"; }
+          if (minutes === 1) { textMinutes = " 1 minutes"; }
+          if (minutes === 15) { textMinutes = "15 minutes"; }
+          if (minutes === 30) { textMinutes = "30 minutes"; }
+          textToSpeak = `current time is ${hour} ${textMinutes}`;
+        } else if (transcript.indexOf(" date") > -1 && transcript.indexOf(" today") > -1) {
+          textToSpeak = `today is ${d.getDate()}  ${month[d.getMonth()]}`;
+        } else if (transcript.indexOf(" date") > -1 && transcript.indexOf(" tomorrow") > -1) {
+          d.setDate(d.getDate() + 1)
+          textToSpeak = `tomorrow is  ${d.getDate()}  ${month[d.getMonth()]}`;
+        } else if (startdiognise == false && (transcript.indexOf("diagnose") > -1 || transcript.indexOf("diagnosing"))) {
+          startdiognise = true;
+          textToSpeak = "diagnose has started, please click and say the symptom onces done say exit or quit";
+        } else if (startdiognise == true && checksympfordisease(transcript)) {
+          console.log(diagnosesymptomsarr);
+          textToSpeak = "you said " + currentdiagnosesymptom + " say next symptom or say exit or quit";
+        } else if (startdiognise == true && transcript.indexOf("exit") > -1 || transcript.indexOf("quit")) {
+          textToSpeak = "diagose has stoped";
+          setTimeout(() => {
+            predictdiseasfromsymptom(diagnosesymptomsarr);
+          }, 2000);
+          startdiognise = false;
+        } else if (startdiognise == false && checksymp(transcript)) {
+          textToSpeak = sympfromsympdata.toString();
+          // let symlist = ["skin_rash", "itching"];
+          // predictdiseasfromsymptom(symlist);
+          speakflag = 1;
+        }
+      }
+
+      // show the closed captioned and remove after 3 seconds
+      if (!speakflag) {
+        texto.textContent = textToSpeak;
+      } else {
+        texto.textContent = "Alexa speaking......";
+      }
+      setTimeout(function () {
+        texto.textContent = "";
+      }, 3000)
+
+      // read out loud the answer
+      let speech = new SpeechSynthesisUtterance();
+      speech.lang = "en-US";
+      speech.text = textToSpeak;
+
+      speech.onend = function (event) {
+        console.log(event.elapsedTime);
+        setTimeout(function () {
+          // frida.classList.remove("speaking");
+        }, 600 - (event.elapsedTime % 600));
+      }
+      // frida.classList.remove("listening");
+      // frida.classList.add("speaking");
+      window.speechSynthesis.speak(speech);
+    };
+
+    // start recognition
+    recognition.start();
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // Close the dropdown menu if the user clicks outside of it
+
+
+
+
+
+  //var elements = document.getElementsByClassName("symptoms");
+
+
+
+
+  // $(document).ready(function () {
+
+
+  // $("#predict").click(function () {
+  function predictdiseasfromsymptom(symlist) {
+
+    // var symptoms = document.getElementsByClassName("symptoms");
+    var noofsym = symlist.length;
+
+
+    if (noofsym == 0) {
+      alert(" please add some symptoms ");
+    }
+
+    else {
+
+
+
+
+
+      $("#resultdiv").show("slow");
+      $('html,body').animate({
+        scrollTop: $("#resultdiv").offset().top
+      },
+        'slow');
+
+
+      console.log(noofsym);
+      console.log(symlist);
+
+      $.ajax({
+        url: 'checkdisease',
+        type: "POST",
+        data: {
+          "noofsym": noofsym,
+          "symptoms": symlist,
+          // csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+        },
+        dataType: 'json',
+
+        success: function (data) {
+          document.getElementById('diseasefield').innerText = data["predicteddisease"];
+          document.getElementById('percentage').innerText = data["confidencescore"] + "%";
+          percent = data["confidencescore"];
+          disease = data["predicteddisease"];
+
+          let speech = new SpeechSynthesisUtterance();
+          speech.lang = "en-US";
+          let textToSpeak = " the predicted disease is " + data["predicteddisease"];
+          speech.text = textToSpeak;
+          window.speechSynthesis.speak(speech);
+          console.log(data["predicteddisease"]);
+
+
+
+
+          $('#percentage').css('width', percent + "%");
+
+          document.getElementById('diseasesearch').innerText = data["predicteddisease"];
+
+          $("#href").attr("href", "https://www.google.com/search?q=" + disease + "");
+
+
+          document.getElementById('consultdoctor').innerText = data["consultdoctor"];
+
+        }
+
+      });
+
+    }
+
+  };
+
+// });
+
+  // });
+</script>
+
+
+<!-- <div class="jumbotron"> 
+  <h1 class="display-4">Be your own doctor...</h1>
+  <p class="lead">
+    It might have happened so many times that you or someone yours need doctor’s help immediately,
+    but they are not available due to some reasons.The Disease Prediction system is an end user
+    support and online consultation project. Here, we propose a web application that allow users
+    to get instant guidance on their disease through an intelligent system. The application is
+    fed with various details and the disease associated with those details.The application allows
+    user to share their disease related issues.It then processes user specific details to check
+    for various illness that could be associated with it.Here we use some intelligent data mining
+    techniques to guess the most accurate illness that could be associated with patient’s details.
+    Based on result, patient can contact doctor accordingly for further treatment.
+
+
+
+    {% if user.is_authenticated %}
+
+
+    {% else %}
+
+  <p class="lead">
+    <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target=".bd-example-modal-lg">Get
+      started</button>
+  </p>
+
+
+</div> -->
+<!-- 
+<br><br><br>
+<div class="container mt-5 mb-3" style="width:fit-content;">
+  <center>
+    <h1>Sign-In As</h1>
+  </center>
+
+
+  <form>
+    <div class="container mt-5 mb-5">
+      <div class="row">
+        <div class="col">
+          <a href="{% url 'sign_in_admin' %}">
+            <img alt="admin" src="{% static 'homepage/admin.png' %}" class="img">
+          </a>
+        </div>
+
+        <div class="col">
+          <a href="{% url 'sign_in_doctor' %}">
+            <img alt="doctor" src="{% static 'homepage/doctor.png' %}" class="img">
+          </a>
+        </div>
+
+        <div class="col">
+          <a href="{% url 'sign_in_patient' %}">
+            <img alt="patient" src="{% static 'homepage/patient.png' %}" class="img">
+          </a>
+        </div>
+      </div>
+    </div>
+  </form>
+</div> -->
+
+
+
+
+{% endif %}
+
+<br><br>
+
+
+
+
+<!-- Large modal -->
+
+<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <center>
+        <h1>Sign-In As</h1>
+      </center>
+      <br><br>
+
+      <center>
+        <form>
+          <div class="container mt-5 mb-5">
+            <div class="row">
+              <div class="col">
+                <a href="{% url 'sign_in_admin' %}">
+                  <img alt="admin" src="{% static 'homepage/admin.png' %}" class="img">
+                </a>
+              </div>
+
+              <div class="col">
+                <a href="{% url 'sign_in_doctor' %}">
+                  <img alt="doctor" src="{% static 'homepage/doctor.png' %}" class="img">
+                </a>
+              </div>
+
+              <div class="col">
+                <a href="{% url 'sign_in_patient' %}">
+                  <img alt="patient" src="{% static 'homepage/patient.png' %}" class="img">
+                </a>
+              </div>
+            </div>
+          </div>
+        </form>
+      </center>
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+<!-- Large modal -->
+
+<div class="modal fade bd-example-modal-lg2" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <center>
+        <h1>Sign-Up As</h1>
+      </center>
+      <br><br>
+
+      <center>
+        <form>
+          <div class="container mt-5 mb-5 ml-5 mr-5">
+            <div class="row">
+
+              <div class="col">
+                <a href="{% url 'signup_doctor' %}">
+                  <img alt="doctor" src="{% static 'homepage/doctor.png' %}" class="img">
+                </a>
+              </div>
+
+              <div class="col">
+                <a href="{% url 'signup_patient' %}">
+                  <img alt="patient" src="{% static 'homepage/patient.png' %}" class="img">
+                </a>
+              </div>
+            </div>
+          </div>
+        </form>
+      </center>
+
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- 
+<br><br><br><br>
+<center>
+  <h2>Our Doctors</h2>
+</center>
+<div class="row mt-5 mb-5">
+  <div class="col">
+    <div class="card">
+      <div class="card-body text-center">
+        <h5 class="card-title">Dr. MANISH BANSAL </h5>
+        <img alt="admin" src="{% static 'homepage/c31.jpg' %}" width="200" height="150" class="rounded">
+        <p class="card-text">H.No-1283, Ward No-14, New Anaz Mandi Road, P.O-Radaur, Distt. Yamuna Nagar - 135133,
+          (Haryana).</p>
+
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card">
+      <div class="card-body text-center">
+        <h5 class="card-title">Dr. BANSAL JATINDER PAUL </h5>
+        <img alt="admin" src="{% static 'homepage/c41.jpg' %}" width="200" height="150" class="rounded">
+        <p class="card-text">Om Niwas Khai Basti, Khai Road, Lehragaga-148031, Distt. Sangrur, Punjab.</p>
+
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card">
+      <div class="card-body text-center">
+        <h5 class="card-title">DR. RADHIKA SWAROOP</h5>
+        <img alt="admin" src="{% static 'homepage/s72.jpg' %}" width="200" height="150" class="rounded">
+        <p class="card-text">Swaroop Hospital, 1, Hawa Sarak, Civil Lines, # Jaipur-302 019.</p>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<br><br><br><br>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="footer" class="card bg-dark text-white">
+  <div class="card-body">
+    Contact-
+
+    <ul>
+
+      <li>
+        <h5 class="mb-1">Email: abinvinod@gmail.com</h5>
+      </li>
+      <li>
+        <h5 class="mb-1">Contact no. 9108834737</h5>
+      </li>
+      <li>
+        <h5 class="mb-1">Address: ....</h5>
+        <div class="footer-copyright text-center">© 2022 Copyright:
+          <a href="#"> healthassistant</a>
+        </div>
+      </li>
+
+    </ul>
+  </div>
+</div>
+ -->
+
+
+
+
+
+
+
+</div>
+
+
+
+<!-- Optional JavaScript -->
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+  integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+  integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+  integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+
+
+
+
+
+
+{% endblock %}
